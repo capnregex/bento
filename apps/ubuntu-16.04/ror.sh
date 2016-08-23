@@ -110,7 +110,6 @@ sudo apt-get -y install \
   ncurses-dev \
   python-software-properties \
   qt5-default \
-  redis-server \
   software-properties-common \
   sqlite3 \
   tcl \
@@ -183,7 +182,7 @@ sudo rm -f /etc/postgresql/9.5/main/pg_hba.conf
 
 echo "# Administrative login with Unix domain sockets
 local   all             postgres                                trust
-local   all             vagrant                                 trust
+# local   all             vagrant                                 trust
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 # "local" is for Unix domain socket connections only
 local   all             all                                     peer
@@ -196,7 +195,7 @@ host    all             all             ::1/128                 md5" | sudo tee 
 sudo /etc/init.d/postgresql reload
 
 # create a ubuntu user, for connecting locally if needed
-sudo -u postgres createuser vagrant --createdb --no-superuser --no-createrole
+# sudo -u postgres createuser vagrant --createdb --no-superuser --no-createrole
 
 # install redis
 # https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-redis-on-ubuntu-16-04
@@ -207,84 +206,16 @@ cd redis-stable
 make
 # make test
 sudo make install
-sudo mkdir -p /etc/redis
+cd utils
+# install non-interactively with defaults
+echo -n | sudo ./install_server.sh
 
-echo 'bind 127.0.0.1
-protected-mode yes
-port 6379
-tcp-backlog 511
-timeout 0
-tcp-keepalive 300
-daemonize no
-supervised systemd
-pidfile /var/run/redis_6379.pid
-loglevel notice
-logfile ""
-databases 16
-save 900 1
-save 300 10
-save 60 10000
-stop-writes-on-bgsave-error yes
-rdbcompression yes
-rdbchecksum yes
-dbfilename dump.rdb
-dir /var/lib/redis
-slave-serve-stale-data yes
-slave-read-only yes
-repl-diskless-sync no
-repl-diskless-sync-delay 5
-repl-disable-tcp-nodelay no
-slave-priority 100
-appendonly no
-appendfilename "appendonly.aof"
-appendfsync everysec
-no-appendfsync-on-rewrite no
-auto-aof-rewrite-percentage 100
-auto-aof-rewrite-min-size 64mb
-lua-time-limit 5000
-slowlog-log-slower-than 10000
-slowlog-max-len 128
-latency-monitor-threshold 0
-notify-keyspace-events ""
-hash-max-ziplist-entries 512
-hash-max-ziplist-value 64
-list-max-ziplist-size -2
-list-compress-depth 0
-set-max-intset-entries 512
-zset-max-ziplist-entries 128
-zset-max-ziplist-value 64
-hll-sparse-max-bytes 3000
-activerehashing yes
-client-output-buffer-limit normal 0 0 0
-client-output-buffer-limit slave 256mb 64mb 60
-client-output-buffer-limit pubsub 32mb 8mb 60
-hz 10
-aof-rewrite-incremental-fsync yes' | sudo tee -a /etc/redis/redis.conf
 
-# This is already done, it seems, when installed
-# echo '[Unit]
-# Description=Redis In-Memory Data Store
-# After=network.target
-#
-# [Service]
-# User=redis
-# Group=redis
-# ExecStart=/usr/local/bin/redis-server /etc/redis/redis.conf
-# ExecStop=/usr/local/bin/redis-cli shutdown
-# Restart=always
-#
-# [Install]
-# WantedBy=multi-user.target' | sudo tee -a /etc/systemd/system/redis.service
+sudo service redis_6379 start
+# other commands include:
+# sudo service redis_6379 stop
+# sudo service redis_6379 status
 
-# this is done also
-# sudo adduser --system --group --no-create-home redis
-
-# this is done also
-# sudo mkdir -p /var/lib/redis
-
-sudo chown redis:redis /var/lib/redis
-
-sudo systemctl start redis
 sudo rm -rf ~/redis-*
 
 # install tmux
