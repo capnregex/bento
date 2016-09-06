@@ -38,33 +38,6 @@ echo 'Acquire::Languages "none";' | sudo cat /etc/apt/apt.conf.d/00aptitude
 # proxy=http://proxy' | sudo tee /etc/curlrc
 # sudo chmod 755 /etc/curlrc
 
-# must install curl
-sudo apt-get -y install curl
-
-# sudo mkdir -p /home/vagrant/.gnupg
-# sudo chown vagrant:vagrant /home/vagrant/.gnupg
-
-# setup gnupg
-mkdir -p /home/vagrant/.gnupg
-sudo chown -R vagrant:vagrant /home/vagrant/.gnupg
-sudo chmod 700 /home/vagrant/.gnupg
-
-# import keys as root
-# The next command doesn't seem to do it, it fails with "public key not found"
-# when running the subsequent sudo with curl
-# curl -sSL https://rvm.io/mpapis.asc | gpg --import -
-sudo gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-command curl -sSL https://rvm.io/mpapis.asc | sudo gpg --import -
-
-sudo chmod 600 /home/vagrant/.gnupg/*
-
-sudo chown -R vagrant:vagrant /home/vagrant/.gnupg
-
-# install rvm as vagrant
-sudo -H -u vagrant bash -c '\curl -sSL https://get.rvm.io | bash -s stable'
-
-echo "source $HOME/.rvm/scripts/rvm" >> /home/vagrant/.bash_profile
-
 # behind a proxy, use this but add your proxy
 # sudo -H -u vagrant bash -c 'gpg --keyserver-options http-proxy=http://proxy --keyserver hkp://keys.gnupg.net:80 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3'
 # sudo gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
@@ -74,9 +47,11 @@ echo "source $HOME/.rvm/scripts/rvm" >> /home/vagrant/.bash_profile
 
 sudo apt-get -y install \
   linux-headers-$(uname -r) \
+  apt-transport-https \
   asciidoc \
   automake \
   build-essential \
+  ca-certificates \
   curl \
   docbook2x \
   dkms \
@@ -106,6 +81,7 @@ sudo apt-get -y install \
   libsqlite3-dev \
   libssl-dev \
   libyaml-dev \
+  linux-image-extra-virtual \
   make \
   ncurses-dev \
   python-software-properties \
@@ -126,41 +102,51 @@ sudo apt-get -y install \
   zlib1g-dev \
   zsh
 
-# install a ruby as vagrant user
-# /home/vagrant/.rvm/bin/rvm install 2.3.1
-# /home/vagrant/.rvm/bin/rvm --default use 2.3.1
-# above doesn't seem to work, so this
-# sudo -H -u vagrant bash -c 'touch /home/vagrant/.rvm/config/alias'
-# echo 'default=ruby-2.3.1' | sudo tee /home/vagrant/.rvm/config/alias
+# Install Docker
+# https://docs.docker.com/engine/installation/linux/ubuntulinux/
+sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+echo "deb https://apt.dockerproject.org/repo ubuntu-xenial main" | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt-get update
+sudo apt-get -y -f install
+sudo apt-get purge lxc-docker
+sudo apt-get update
+sudo apt-get -y install docker-engine
+# start docker
+sudo server docker start
+# add the vagrant user to the docker group
+sudo groupadd docker
+sudo usermod -aG docker vagrant
+# start on boot
+sudo systemctl enable docker
 
-# install newer version of git
-sudo apt-get -y install git # should be 2.9.0
-# If you need to manually install a new version, follow below
-# cd ~# wget --quiet https://github.com/git/git/archive/v2.9.0.zip
-# unzip -q v2.9.0.zip
-# cd git-*
-# make prefix=/usr/local all
-# sudo make prefix=/usr/local install
-# cd ~
-# sudo rm -rf ~/git-2.9.0
-# sudo rm -rf ~/v2.9.0.zip
+# Setup gnupg so we can install RVM per below
+mkdir -p /home/vagrant/.gnupg
+sudo chown -R vagrant:vagrant /home/vagrant/.gnupg
+sudo chmod 700 /home/vagrant/.gnupg
 
-# install node
+# Import keys as root
+sudo gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+command curl -sSL https://rvm.io/mpapis.asc | sudo gpg --import -
+
+sudo chmod 600 /home/vagrant/.gnupg/*
+
+sudo chown -R vagrant:vagrant /home/vagrant/.gnupg
+
+# Install rvm as vagrant
+sudo -H -u vagrant bash -c '\curl -sSL https://get.rvm.io | bash -s stable'
+
+# Include rvm in bash
+echo "source $HOME/.rvm/scripts/rvm" >> /home/vagrant/.bash_profile
+
+# Install newer version of git
+sudo apt-get -y install git # should be at least 2.9.0
+
+# Install node
 # this forces install of some missing support packages, may not be necessary
 # but was when tested manually
 sudo apt-get -y -f install
 # this is MUCH faster than compiling
 sudo apt-get -y install nodejs # should be at least 6.2.0
-# If you want to manually install it, script is here
-# cd ~
-# wget --quiet https://nodejs.org/dist/v6.2.0/node-v6.2.0.tar.gz
-# tar -xzf node-v*
-# cd node-v*
-# ./configure
-# make
-# sudo make install
-# sudo chmod 755 /usr/local/bin/node
-# sudo rm -rf ~/node-v*
 
 # install postgres 9.5
 cd ~
@@ -284,14 +270,3 @@ cd /home/vagrant/.fonts
 wget https://github.com/powerline/fonts/raw/master/DroidSansMonoSlashed/Droid%20Sans%20Mono%20Slashed%20for%20Powerline.ttf
 chown vagrant:vagrant Droid\ Sans\ Mono\ Slashed\ for\ Powerline.ttf
 sudo fc-cache -f -v
-
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem update --system --no-document'
-
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem install bundler --no-document'
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem update bundler --no-document'
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem install pg --no-document'
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem install nokogiri --no-document'
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem install capybara-webkit --no-document'
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem install brakeman --no-document'
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem install overcommit --no-document'
-# sudo -H -u vagrant bash -c '/home/vagrant/.rvm/rubies/ruby-2.3.1/bin/gem install bcrypt --no-document'
