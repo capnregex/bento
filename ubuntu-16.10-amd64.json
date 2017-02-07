@@ -241,6 +241,7 @@
         "scripts/common/virtualbox.sh",
         "scripts/ubuntu/vmware.sh",
         "scripts/common/parallels.sh",
+        "apps/ubuntu-16.10/ror.sh",
         "scripts/ubuntu/cleanup.sh",
         "scripts/common/minimize.sh"
       ],
@@ -254,7 +255,7 @@
     "cpus": "1",
     "disk_size": "40960",
     "git_revision": "__unknown_git_revision__",
-    "headless": "",
+    "headless": "true",
     "http_proxy": "{{env `http_proxy`}}",
     "https_proxy": "{{env `https_proxy`}}",
     "iso_checksum": "72b0d421da77f1e0c549b4efe6fc6c184e9909d6792f0d1e59b56d63e9705659",
